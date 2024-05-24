@@ -3,15 +3,15 @@
 import { auth } from "@/lib/auth";
 import { fetchRedis } from "@/lib/redis";
 import { sIsMemberSchema, userIdSchema } from "@/schemas";
-
+import { IsSuccess, UserId } from "@/types/add";
 export const addFriend = async (email: string) => {
-  const userIdOfEmail = await fetchRedis("get", `user:email:${email}`);
+  const userIdOfEmail = await fetchRedis<UserId>("get", `user:email:${email}`);
 
   if (!userIdOfEmail) throw new Error("User not found");
   const userIdOfEmailParsed = userIdSchema.safeParse(userIdOfEmail);
   if (userIdOfEmailParsed.error) {
     throw new Error(
-      `Zod Parsing Error ${userIdOfEmail.error.issues[0].message}`
+      `Zod Parsing Error ${userIdOfEmailParsed.error.issues[0].message}`
     );
   }
   const parsedUserId = userIdOfEmailParsed.data;
@@ -20,7 +20,7 @@ export const addFriend = async (email: string) => {
   if (session.user.id === parsedUserId) throw new Error("Cannot add yourself");
 
   const isFriendRequestAlreadySent = sIsMemberSchema.parse(
-    await fetchRedis(
+    await fetchRedis<IsSuccess>(
       "sismember",
       `user:${parsedUserId}:incoming_friend_requests`,
       session.user.id
@@ -30,7 +30,7 @@ export const addFriend = async (email: string) => {
     throw new Error("Friend request already sent");
 
   const isAlreadyAFriend = sIsMemberSchema.parse(
-    await fetchRedis(
+    await fetchRedis<IsSuccess>(
       "sismember",
       `user:${session.user.id}:friends`,
       parsedUserId
@@ -39,7 +39,7 @@ export const addFriend = async (email: string) => {
   if (isAlreadyAFriend === 1) throw new Error("Already a friend");
 
   const isAdded = sIsMemberSchema.parse(
-    await fetchRedis(
+    await fetchRedis<IsSuccess>(
       "sadd",
       `user:${parsedUserId}:incoming_friend_requests`,
       session.user.id

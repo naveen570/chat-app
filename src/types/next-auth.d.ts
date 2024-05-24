@@ -1,6 +1,7 @@
 import { JWT } from "next-auth/jwt";
 import { Session } from "next-auth";
-type UserId = string;
+import { UserId } from "./add";
+
 declare module "next-auth/jwt" {
   interface JWT {
     id: UserId;

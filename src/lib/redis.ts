@@ -1,7 +1,7 @@
 import { redisToken, redisURL } from "./env";
 
 type Command = "get" | "sismember" | "smemebers" | "zrange" | "sadd";
-export const fetchRedis = async (
+export const fetchRedis = async <T>(
   command: Command,
   ...args: (string | number)[]
 ) => {
@@ -16,5 +16,5 @@ export const fetchRedis = async (
     throw new Error(`Error executing Redis command: ${response.statusText}`);
   }
   const data = await response.json();
-  return data?.result;
+  return data?.result as T;
 };
